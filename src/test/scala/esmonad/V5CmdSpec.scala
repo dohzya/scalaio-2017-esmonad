@@ -24,14 +24,13 @@ class V5CmdSpec extends AsyncFlatSpec with Matchers {
         state1 <- EitherT.fromOptionF(hydrate[Turtle]("123"), "Not found")
         cmd2 = Look(id, South)
         event2 <- EitherT.fromEither(commandHandler(Some(state1), cmd2))
-        _ <- EitherT.right(persist(event2))
-
-        state2 <- EitherT.fromOptionF(hydrate[Turtle]("123"), "Not found")
+        Some(state2) = eventHandler(Some(state1), event2)
         cmd3 = Forward(id, 2)
         event3 <- EitherT.fromEither(commandHandler(Some(state2), cmd3))
         Some(state3) = eventHandler(Some(state2), event3)
         cmd4 = Look(id, West)
         event4 <- EitherT.fromEither(commandHandler(Some(state3), cmd4))
+        _ <- EitherT.right(persist(event2))
         _ <- EitherT.right(persist(event3))
         _ <- EitherT.right(persist(event4))
 

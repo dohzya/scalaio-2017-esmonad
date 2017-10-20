@@ -49,12 +49,12 @@ trait V5 {
     def create(id: String): Either[String, TurtleEvent] =
       Right(Create(id))
 
-    def look(id: String, direction: Direction): Either[String, TurtleEvent] =
-      Right(Look(id, direction))
+    def look(turtle: Turtle, direction: Direction): Either[String, TurtleEvent] =
+      Right(Look(turtle.id, direction))
 
-    def forward(id: String, amount: Int): Either[String, TurtleEvent] =
+    def forward(turtle: Turtle, amount: Int): Either[String, TurtleEvent] =
       if (amount < 0) Left("Unable to forward of a negative amount")
-      else Right(Forward(id, amount))
+      else Right(Forward(turtle.id, amount))
   }
 
   trait WriteJournal[EVENT] {

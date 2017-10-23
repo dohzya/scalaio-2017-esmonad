@@ -2,32 +2,19 @@ package esmonad
 
 object V1App extends V1 with App
 
-trait V1 {
+trait V1 { // Basic Event Sourced
 
-  // The state
-
-  sealed trait Direction
-  case object North extends Direction; case object South extends Direction
-  case object Est extends Direction; case object West extends Direction
-
-  case class Turtle(x: Int, y: Int, dir: Direction)
-
-  // The events
+  case class Turtle(id: String, pos: Position, dir: Direction)
 
   sealed trait TurtleEvent
-  case class Look(dir: Direction) extends TurtleEvent
-  case class Forward(amount: Int) extends TurtleEvent
+  case class Turn(rot: Rotation) extends TurtleEvent
+  case class Walk(dist: Int) extends TurtleEvent
 
   type EventHandler[STATE, EVENT] = (STATE, EVENT) => STATE
 
-  // The handler
-  def handler(state: Turtle, event: TurtleEvent): Turtle =
-    event match {
-      case Look(dir) => state.copy(dir = dir)
-      case Forward(a) => state.dir match {
-        case North => state.copy(y = state.y + a); case South => state.copy(y = state.y - a)
-        case Est => state.copy(x = state.x + a); case West => state.copy(x = state.x - a)
-      }
+  val handler: EventHandler[Turtle, TurtleEvent] = {
+    case (state, Turn(rot)) => state.copy(dir = Direction.rotate(state.dir, rot))
+    case (state, Walk(dist)) => state.copy(pos = Position.move(state.pos, state.dir, dist))
   }
 
 }

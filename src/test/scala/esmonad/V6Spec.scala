@@ -7,32 +7,43 @@ import cats.instances.future._
 import org.scalatest._
 
 class V6Spec extends AsyncFlatSpec with Matchers {
+  import esmonad.V6App._
+
+  implicit object TurtleJournal extends WriteJournal[TurtleEvent] with Hydratable[Turtle] {
+    private var journal = Seq.empty[TurtleEvent]
+    override def write(event: Seq[TurtleEvent]): Future[Unit] = Future {
+      synchronized { journal = journal ++ event }
+    }
+    def journal(id: String): Future[Seq[TurtleEvent]] = Future {
+      synchronized { journal.filter(_.id == id) }
+    }
+    override def hydrate(id: String): Future[Option[Turtle]] =
+      journal(id).map { events => events.foldLeft(Option.empty[Turtle])(handler) }
+  }
 
   "The V6 object" should "be valid" in {
 
-    import V6App._
-
     (
       for {
-        _ <- EitherT.fromEither[Future](Right(()))
-
-        event1 = Create("123")
-        _ <- EitherT.right(persist(event1))
-
-        state1 <- OptionT(hydrate[Turtle]("123")).toRight("not found")
-        event2 = Look(state1.id, South)
-        state2 <- EitherT.fromEither(handler(Some(state1), event2))
-        event3 = Forward(state2.id, 2)
-        state3 <- EitherT.fromEither(handler(Some(state2), event3))
-        event4 = Look(state3.id, West)
-        _ <- EitherT.right(persist(event2))
-        _ <- EitherT.right(persist(event3))
-        _ <- EitherT.right(persist(event4))
+        events <- EitherT.fromEither(
+          Act.empty[Turtle, TurtleEvent](
+            handler,
+            Turtle.create("123", Position.zero, North)
+          ) and
+          Turtle.walk(1) and
+          Turtle.turn(ToRight) and
+          Turtle.walk(1) and
+          Turtle.turn(ToRight) and
+          Turtle.walk(2) and
+          Turtle.turn(ToRight) and
+          Turtle.walk(2) events
+        )
+        _ <- EitherT.right(persist(events))
 
         state3 <- OptionT(hydrate[Turtle]("123")).toRight("not found")
       } yield state3
     ).value.map {
-      _ shouldBe Right(Turtle("123", 0, -2, West))
+      _ shouldBe Right(Turtle("123", Position(-1, -1), West))
     }
 
   }

@@ -5,26 +5,19 @@ import scala.concurrent.Future
 
 object V5App extends V5 with App
 
-trait V5 {
+trait V5 { // Complete Event Sourced
 
-  // The state
-
-  sealed trait Direction
-  case object North extends Direction; case object South extends Direction
-  case object Est extends Direction; case object West extends Direction
-
-  case class Turtle(id: String, x: Int, y: Int, dir: Direction)
-
-  // The events
+  case class Turtle(id: String, pos: Position, dir: Direction)
 
   sealed trait TurtleEvent { def id: String }
-  case class Create(id: String) extends TurtleEvent
-  case class Look(id: String, dir: Direction) extends TurtleEvent
-  case class Forward(id: String, amount: Int) extends TurtleEvent
+  case class Create(id: String, pos: Position, dir: Direction)
+    extends TurtleEvent
+  case class Turn(id: String, rot: Rotation) extends TurtleEvent
+  case class Walk(id: String, dist: Int) extends TurtleEvent
 
   case class EventHandler[STATE, EVENT](
     fn: PartialFunction[(Option[STATE], EVENT), STATE]
-  ) extends Function2[Option[STATE], EVENT, Some[STATE]] {
+  ) extends ((Option[STATE], EVENT) => Some[STATE]) {
     def apply(state: Option[STATE], event: EVENT): Some[STATE] = {
       val input = (state, event)
       if (fn.isDefinedAt(input)) Some(fn(input))
@@ -34,59 +27,42 @@ trait V5 {
 
   // The handler
   val handler = EventHandler[Turtle, TurtleEvent] {
-    case (None, Create(id)) => Turtle(id, 0, 0, North)
-    case (Some(t), Look(id, dir)) if id == t.id => t.copy(dir = dir)
-    case (Some(t), Forward(id, a)) if id == t.id => t.dir match {
-      case North => t.copy(y = t.y + a); case South => t.copy(y = t.y - a)
-      case Est => t.copy(x = t.x + a); case West => t.copy(x = t.x - a)
-    }
+    case (None, Create(id, pos, dir)) => Turtle(id, pos, dir)
+    case (Some(t), Turn(id, rot)) if id == t.id =>
+      t.copy(dir = Direction.rotate(t.dir, rot))
+    case (Some(t), Walk(id, dist)) if id == t.id =>
+      t.copy(pos = Position.move(t.pos, t.dir, dist))
   }
 
   type CommandHandler[STATE, COMMAND, ERROR, EVENT] =
     (STATE, COMMAND) => Either[ERROR, EVENT]
 
   object Turtle {
-    def create(id: String): Either[String, TurtleEvent] =
-      Right(Create(id))
+    def create(id: String, pos: Position, dir: Direction): Either[String, TurtleEvent] =
+      Right(Create(id, pos, dir))
 
-    def look(turtle: Turtle, direction: Direction): Either[String, TurtleEvent] =
-      Right(Look(turtle.id, direction))
+    def turn(turtle: Turtle, rot: Rotation): Either[String, TurtleEvent] =
+      Right(Turn(turtle.id, rot))
 
-    def forward(turtle: Turtle, amount: Int): Either[String, TurtleEvent] =
-      if (amount < 0) Left("Unable to forward of a negative amount")
-      else Right(Forward(turtle.id, amount))
+    def walk(turtle: Turtle, dist: Int): Either[String, TurtleEvent] = {
+      val moved = Position.move(turtle.pos, turtle.dir, dist)
+      if (moved.x.abs > 100 || moved.y.abs > 100) Left("Too far away")
+      else Right(Walk(turtle.id, dist))
+    }
   }
 
   trait WriteJournal[EVENT] {
-    def write(event: EVENT): Future[Unit]
+    def write(events: Seq[EVENT]): Future[Unit]
   }
 
   trait Hydratable[STATE] {
     def hydrate(id: String): Future[Option[STATE]]
   }
 
-  implicit object TurtleJournal extends WriteJournal[TurtleEvent] with Hydratable[Turtle] {
-    private var journal = Seq.empty[TurtleEvent]
-
-    override def write(event: TurtleEvent): Future[Unit] = Future {
-      synchronized {
-        journal = journal :+ event
-      }
-    }
-    def journal(id: String): Future[Seq[TurtleEvent]] = Future {
-      synchronized {
-        journal.filter(_.id == id)
-      }
-    }
-    override def hydrate(id: String): Future[Option[Turtle]] =
-      journal(id).map { events => events.foldLeft(Option.empty[Turtle])(handler) }
-
-  }
-
   def hydrate[STATE : Hydratable](id: String): Future[Option[STATE]] =
     implicitly[Hydratable[STATE]].hydrate(id)
 
-  def persist[EVENT : WriteJournal](event: EVENT): Future[Unit] =
-    implicitly[WriteJournal[EVENT]].write(event)
+  def persist[EVENT : WriteJournal](events: Seq[EVENT]): Future[Unit] =
+    implicitly[WriteJournal[EVENT]].write(events)
 
 }

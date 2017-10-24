@@ -2,6 +2,9 @@ package esmonad
 
 object V7App extends V7 with App
 
+/**
+ * In this version, we defer capturing the initial state and the handler until the sourced program is fully built.
+ */
 trait V7 extends V6Handler with V6Journal with V6Model {
 
   case class SourcedCreation[STATE, ERROR, EVENT](
@@ -50,14 +53,18 @@ trait V7 extends V6Handler with V6Journal with V6Model {
       sourcedCreation.events(handler)
     }
 
-    def sourceNew[STATE, ERROR, EVENT](block: Either[ERROR, EVENT]): SourcedCreation[STATE, ERROR, EVENT] = {
-      SourcedCreation[STATE, ERROR, EVENT] {
-        handler =>
-          block.map { event =>
-            (handler(None, event).value, Seq(event))
-          }
+    final class SourceNewPartiallyApplied[STATE] {
+      def apply[ERROR, EVENT](block: Either[ERROR, EVENT]): SourcedCreation[STATE, ERROR, EVENT] = {
+        SourcedCreation[STATE, ERROR, EVENT] {
+          handler =>
+            block.map { event =>
+              (handler(None, event).value, Seq(event))
+            }
+        }
       }
     }
+
+    def sourceNew[STATE]: SourceNewPartiallyApplied[STATE] = new SourceNewPartiallyApplied[STATE]
 
     def source[STATE, ERROR, EVENT](block: STATE => Either[ERROR, EVENT]): SourcedUpdate[STATE, ERROR, EVENT] = {
       SourcedUpdate[STATE, ERROR, EVENT] {

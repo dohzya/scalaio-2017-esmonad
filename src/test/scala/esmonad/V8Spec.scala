@@ -3,15 +3,17 @@ package esmonad
 import cats.data.{EitherT, OptionT}
 import cats.instances.future._
 import org.scalatest.{AsyncFlatSpec, Matchers}
+import cats.instances.either._
 
 import scala.concurrent.Future
 
-class V7Spec extends AsyncFlatSpec with Matchers {
 
-  import esmonad.V7App._
+class V8Spec extends AsyncFlatSpec with Matchers {
+
+  import esmonad.V8App._
   import Sourced._
 
-  "The V7 object" should "be valid" in {
+  "The V8 object" should "be valid" in {
     val id = "123"
     def walkRight = {
       source(Turtle.walk(1)) and

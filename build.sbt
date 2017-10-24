@@ -12,5 +12,6 @@ lazy val root = (project in file(".")).
     scalacOptions += "-language:postfixOps",
     scalacOptions += "-Ypartial-unification",
     libraryDependencies += scalaTest % Test,
-    libraryDependencies += "org.typelevel" %% "cats-core" % "1.0.0-MF"
+    libraryDependencies += "org.typelevel" %% "cats-core" % "1.0.0-MF",
+    addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4")
   )

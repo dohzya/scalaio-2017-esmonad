@@ -9,25 +9,13 @@ import org.scalatest._
 class V6Spec extends AsyncFlatSpec with Matchers {
   import esmonad.V6App._
 
-  implicit object TurtleJournal extends WriteJournal[TurtleEvent] with Hydratable[Turtle] {
-    private var journal = Seq.empty[TurtleEvent]
-    override def write(event: Seq[TurtleEvent]): Future[Unit] = Future {
-      synchronized { journal = journal ++ event }
-    }
-    def journal(id: String): Future[Seq[TurtleEvent]] = Future {
-      synchronized { journal.filter(_.id == id) }
-    }
-    override def hydrate(id: String): Future[Option[Turtle]] =
-      journal(id).map { events => events.foldLeft(Option.empty[Turtle])(handler) }
-  }
-
   "The V6 object" should "be valid" in {
 
     (
       for {
         events <- EitherT.fromEither(
           Act.empty[Turtle, TurtleEvent](
-            handler,
+            Turtle.handler,
             Turtle.create("123", Position.zero, North)
           ) and
           Turtle.walk(1) and

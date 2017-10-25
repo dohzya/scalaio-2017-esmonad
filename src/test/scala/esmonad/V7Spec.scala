@@ -15,24 +15,24 @@ class V7Spec extends AsyncFlatSpec with Matchers {
   import Sourced._
 
   "The V7 object" should "be valid" in {
-    val id = "123"
-    def walkRight = {
-      source(Turtle.walk(1)) andThen
+
+    def walkRight(dist: Int) = {
+      source(Turtle.walk(dist)) andThen
       source(Turtle.turn(ToRight))
     }
 
     (for {
       events <- EitherT.fromEither[Future] {
         (
-          sourceNew[Turtle](Turtle.create(id, Position.zero, North)) andThen
-          walkRight andThen
-          walkRight andThen
+          sourceNew[Turtle](Turtle.create("123", Position.zero, North)) andThen
+          walkRight(1) andThen
+          walkRight(1) andThen
           source(Turtle.walk(2))
         ).events
       }
       _ <- EitherT.right(persist(events))
 
-      state1 <- OptionT(hydrate[Turtle](id)).toRight("not found")
+      state1 <- OptionT(hydrate[Turtle]("123")).toRight("not found")
       moreEvents <- EitherT.fromEither[Future] {
         Sourced.events(state1) { // alternative syntax
           source(Turtle.turn(ToRight)) andThen
@@ -42,7 +42,7 @@ class V7Spec extends AsyncFlatSpec with Matchers {
       _ <- EitherT.right(persist(moreEvents))
 
 
-      state2 <- OptionT(hydrate[Turtle](id)).toRight("not found")
+      state2 <- OptionT(hydrate[Turtle]("123")).toRight("not found")
     } yield state2
       ).value.map {
       _ shouldBe Right(Turtle("123", Position(-1, -1), West))

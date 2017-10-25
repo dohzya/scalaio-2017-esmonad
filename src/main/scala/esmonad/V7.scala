@@ -42,26 +42,30 @@ trait V7Sourced { self: V4Handler =>
 
   object Sourced {
 
+    def events[STATE, EVENT](sourcedCreation: SourcedCreation[STATE, EVENT]): Either[String, Seq[EVENT]] = {
+      sourcedCreation.events
+    }
+
     def events[STATE, EVENT](state: STATE)(sourcedUpdate: SourcedUpdate[STATE, EVENT]): Either[String, Seq[EVENT]] = {
       sourcedUpdate.events(state)
     }
+
+    def sourceNew[STATE]: SourceNewPartiallyApplied[STATE] = new SourceNewPartiallyApplied[STATE]
 
     final class SourceNewPartiallyApplied[STATE] {
       def apply[EVENT](block: Either[String, EVENT])(implicit handler: EventHandler[STATE, EVENT]): SourcedCreation[STATE, EVENT] = {
         SourcedCreation[STATE, EVENT] {
           block.map { event =>
-            (Seq(event), handler(None, event).value)
+            Seq(event) -> handler(None, event).value
           }
         }
       }
     }
 
-    def sourceNew[STATE]: SourceNewPartiallyApplied[STATE] = new SourceNewPartiallyApplied[STATE]
-
     def source[STATE, EVENT](block: STATE => Either[String, EVENT])(implicit handler: EventHandler[STATE, EVENT]): SourcedUpdate[STATE, EVENT] = {
       SourcedUpdate[STATE, EVENT] { state =>
         block(state).map { event =>
-          (Seq(event), handler(Some(state), event).value)
+          Seq(event) -> handler(Some(state), event).value
         }
       }
     }

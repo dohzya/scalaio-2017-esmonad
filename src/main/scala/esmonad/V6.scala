@@ -33,6 +33,16 @@ trait V6Sourced { self: V4Handler =>
 
   object Sourced {
 
+    def sourceNew[STATE]: SourceNewPartiallyApplied[STATE] = new SourceNewPartiallyApplied[STATE]
+
+    final class SourceNewPartiallyApplied[STATE] {
+      def apply[EVENT](block: Either[String, EVENT])(implicit handler: EventHandler[STATE, EVENT]): Sourced[STATE, EVENT] =
+        new Sourced(block.map { e =>
+          val Some(newState) = handler(None, e)
+          Vector(e) -> newState
+        })
+    }
+
     def source[STATE, EVENT](
       block: STATE => Either[String, EVENT]
     )(implicit handler: EventHandler[STATE, EVENT]): STATE => Sourced[STATE, EVENT] =
@@ -50,15 +60,6 @@ trait V6Sourced { self: V4Handler =>
         Vector(e) -> newState
       })
 
-    final class SourceNewPartiallyApplied[STATE] {
-      def apply[EVENT](block: Either[String, EVENT])(implicit handler: EventHandler[STATE, EVENT]): Sourced[STATE, EVENT] =
-        new Sourced(block.map { e =>
-          val Some(newState) = handler(None, e)
-          Vector(e) -> newState
-        })
-    }
-
-    def sourceNew[STATE]: SourceNewPartiallyApplied[STATE] = new SourceNewPartiallyApplied[STATE]
   }
 
 }

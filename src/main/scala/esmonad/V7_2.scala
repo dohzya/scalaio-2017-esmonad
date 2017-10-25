@@ -50,9 +50,15 @@ trait V7_2Sourced { self: V4Handler =>
 
   object Sourced {
 
+    def events[F[_], STATE, EVENT](sourcedCreationT: SourcedCreationT[F, STATE, EVENT])(implicit F: Functor[F]): F[Seq[EVENT]] = {
+      sourcedCreationT.events
+    }
+
     def events[F[_], STATE, EVENT](state: STATE)(sourcedUpdate: SourcedUpdateT[F, STATE, EVENT])(implicit F: Functor[F]): F[Seq[EVENT]] = {
       sourcedUpdate.events(state)
     }
+
+    def sourceNew[STATE]: SourceNewPartiallyApplied[STATE] = new SourceNewPartiallyApplied[STATE]
 
     final class SourceNewPartiallyApplied[STATE] {
       def apply[F[_], EVENT](block: F[EVENT])(implicit F: Functor[F], handler: EventHandler[STATE, EVENT]): SourcedCreationT[F, STATE, EVENT] = {
@@ -63,8 +69,6 @@ trait V7_2Sourced { self: V4Handler =>
         }
       }
     }
-
-    def sourceNew[STATE]: SourceNewPartiallyApplied[STATE] = new SourceNewPartiallyApplied[STATE]
 
     def source[F[_], STATE, EVENT](block: STATE => F[EVENT])(implicit F: Functor[F], handler: EventHandler[STATE, EVENT]): SourcedUpdateT[F, STATE, EVENT] = {
       SourcedUpdateT[F, STATE, EVENT] { state =>

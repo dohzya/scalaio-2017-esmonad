@@ -10,6 +10,7 @@ lazy val root = (project in file(".")).
     name := "ScalaIO2017-ESMonad",
     scalacOptions += "-feature",
     scalacOptions += "-language:postfixOps",
+    scalacOptions += "-language:higherKinds",
     scalacOptions += "-Ypartial-unification",
     libraryDependencies += scalaTest % Test,
     libraryDependencies += "org.typelevel" %% "cats-core" % "1.0.0-MF",

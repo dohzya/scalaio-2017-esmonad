@@ -7,14 +7,14 @@ import cats.instances.future._
 import org.scalatest._
 
 class V6Spec extends AsyncFlatSpec with Matchers {
-  import esmonad.V6App._
+  import esmonad.V6._
 
   "The V6 object" should "be valid" in {
 
     (
       for {
         events <- EitherT.fromEither(
-          Act.empty[Turtle, TurtleEvent](
+          Sourced.empty[Turtle, TurtleEvent](
             Turtle.handler,
             Turtle.create("123", Position.zero, North)
           ) and

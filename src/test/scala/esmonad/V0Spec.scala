@@ -3,7 +3,7 @@ package esmonad
 import org.scalatest._
 
 class V0Spec extends FlatSpec with Matchers {
-  import esmonad.V0App._
+  import esmonad.V0._
 
   "The V1 object" should "be valid" in {
 

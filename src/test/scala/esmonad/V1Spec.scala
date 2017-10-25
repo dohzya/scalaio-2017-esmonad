@@ -3,7 +3,7 @@ package esmonad
 import org.scalatest._
 
 class V1Spec extends FlatSpec with Matchers {
-  import esmonad.V1App._
+  import esmonad.V1._
 
   "The V1 object" should "be valid" in {
 
@@ -14,7 +14,7 @@ class V1Spec extends FlatSpec with Matchers {
       Walk(2),
     )
     val initialState = Turtle("123", Position.zero, North)
-    val finalState = events.foldLeft(initialState)(handler)
+    val finalState = events.foldLeft(initialState)(Turtle.handler)
     finalState shouldBe Turtle("123", Position(-1, -1), West)
 
   }

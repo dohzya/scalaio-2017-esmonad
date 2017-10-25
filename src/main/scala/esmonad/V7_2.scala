@@ -9,7 +9,7 @@ import scala.language.higherKinds
 /**
  * In this version, we abstract over the type of errors, side effects etc in the event handlers
  */
-object V7_2 extends V6Handler with V6Journal with V6Model {
+trait V7_2Sourced { self: V4Handler =>
 
   case class SourcedCreationT[F[_], STATE, EVENT](
     run: F[(Seq[EVENT], STATE)]
@@ -76,3 +76,5 @@ object V7_2 extends V6Handler with V6Journal with V6Model {
   }
 
 }
+
+object V7_2 extends V7_2Sourced with V4Handler with V5Journal with V5Models

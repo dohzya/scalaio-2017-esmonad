@@ -8,10 +8,10 @@ import org.scalatest.{AsyncFlatSpec, Matchers}
 import scala.concurrent.Future
 
 class V7Spec extends AsyncFlatSpec with Matchers {
+  //import esmonad.V7._
+  //import esmonad.V7_2._
+  import esmonad.V7_3._
 
-  import esmonad.V7._
-//  import esmonad.V7_2._
-//  import esmonad.V7_3._
   import Sourced._
 
   "The V7 object" should "be valid" in {

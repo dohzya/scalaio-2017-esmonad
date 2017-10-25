@@ -8,7 +8,7 @@ import cats.{FlatMap, Functor}
 import scala.language.higherKinds
 
 // The same, but written with the corresponding typeclasses
-object V7_3 extends V6Handler with V6Journal with V6Model {
+trait V7_3Sourced { self: V4Handler =>
 
   case class SourcedCreationT[F[_], STATE, EVENT](
     impl: SourcedCreationT.Impl[F, STATE, EVENT, STATE]
@@ -83,3 +83,5 @@ object V7_3 extends V6Handler with V6Journal with V6Model {
     }
   }
 }
+
+object V7_3 extends V7_3Sourced with V4Handler with V5Journal with V5Models

@@ -3,16 +3,16 @@ package esmonad
 /**
  * In this version, we use wrap the monad into a function of previous state (technically, a Kleisli).
  */
-object V7 extends V6Handler with V6Journal with V6Model {
+trait V7Sourced { self: V4Handler =>
 
-  case class SourcedCreation[STATE, ERROR, EVENT](
-    run: Either[ERROR, (Seq[EVENT], STATE)]
+  case class SourcedCreation[STATE, EVENT](
+    run: Either[String, (Seq[EVENT], STATE)]
   ) {
 
-    def events: Either[ERROR, Seq[EVENT]] = run.map(_._1)
+    def events: Either[String, Seq[EVENT]] = run.map(_._1)
 
-    def andThen(other: SourcedUpdate[STATE, ERROR, EVENT]): SourcedCreation[STATE, ERROR, EVENT] = {
-      SourcedCreation[STATE, ERROR, EVENT] {
+    def andThen(other: SourcedUpdate[STATE, EVENT]): SourcedCreation[STATE, EVENT] = {
+      SourcedCreation[STATE, EVENT] {
         this.run.flatMap { case (thisEvents, thisState) =>
           other.run(thisState).map { case (otherEvents, otherState) =>
             (thisEvents ++ otherEvents, otherState)
@@ -22,14 +22,14 @@ object V7 extends V6Handler with V6Journal with V6Model {
     }
   }
 
-  case class SourcedUpdate[STATE, ERROR, EVENT](
-    run: (STATE) => Either[ERROR, (Seq[EVENT], STATE)]
+  case class SourcedUpdate[STATE, EVENT](
+    run: (STATE) => Either[String, (Seq[EVENT], STATE)]
   ) {
 
-    def events(state: STATE): Either[ERROR, Seq[EVENT]] = run(state).map(_._1)
+    def events(state: STATE): Either[String, Seq[EVENT]] = run(state).map(_._1)
 
-    def andThen(other: SourcedUpdate[STATE, ERROR, EVENT]): SourcedUpdate[STATE, ERROR, EVENT] = {
-      SourcedUpdate[STATE, ERROR, EVENT] { initialState =>
+    def andThen(other: SourcedUpdate[STATE, EVENT]): SourcedUpdate[STATE, EVENT] = {
+      SourcedUpdate[STATE, EVENT] { initialState =>
         this.run(initialState).flatMap { case (thisEvents, thisState) =>
           other.run(thisState).map { case (otherEvents, otherState) =>
             (thisEvents ++ otherEvents, otherState)
@@ -42,13 +42,13 @@ object V7 extends V6Handler with V6Journal with V6Model {
 
   object Sourced {
 
-    def events[STATE, ERROR, EVENT](state: STATE)(sourcedUpdate: SourcedUpdate[STATE, ERROR, EVENT]): Either[ERROR, Seq[EVENT]] = {
+    def events[STATE, EVENT](state: STATE)(sourcedUpdate: SourcedUpdate[STATE, EVENT]): Either[String, Seq[EVENT]] = {
       sourcedUpdate.events(state)
     }
 
     final class SourceNewPartiallyApplied[STATE] {
-      def apply[ERROR, EVENT](block: Either[ERROR, EVENT])(implicit handler: EventHandler[STATE, EVENT]): SourcedCreation[STATE, ERROR, EVENT] = {
-        SourcedCreation[STATE, ERROR, EVENT] {
+      def apply[EVENT](block: Either[String, EVENT])(implicit handler: EventHandler[STATE, EVENT]): SourcedCreation[STATE, EVENT] = {
+        SourcedCreation[STATE, EVENT] {
           block.map { event =>
             (Seq(event), handler(None, event).value)
           }
@@ -58,8 +58,8 @@ object V7 extends V6Handler with V6Journal with V6Model {
 
     def sourceNew[STATE]: SourceNewPartiallyApplied[STATE] = new SourceNewPartiallyApplied[STATE]
 
-    def source[STATE, ERROR, EVENT](block: STATE => Either[ERROR, EVENT])(implicit handler: EventHandler[STATE, EVENT]): SourcedUpdate[STATE, ERROR, EVENT] = {
-      SourcedUpdate[STATE, ERROR, EVENT] { state =>
+    def source[STATE, EVENT](block: STATE => Either[String, EVENT])(implicit handler: EventHandler[STATE, EVENT]): SourcedUpdate[STATE, EVENT] = {
+      SourcedUpdate[STATE, EVENT] { state =>
         block(state).map { event =>
           (Seq(event), handler(Some(state), event).value)
         }
@@ -68,3 +68,5 @@ object V7 extends V6Handler with V6Journal with V6Model {
   }
 
 }
+
+object V7 extends V7Sourced with V4Handler with V5Journal with V5Models

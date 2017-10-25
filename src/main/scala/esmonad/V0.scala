@@ -1,8 +1,6 @@
 package esmonad
 
-object V0App extends V0 with App
-
-trait V0 {
+trait V0Models {
 
   case class Turtle(id: String, pos: Position, dir: Direction)
 
@@ -17,3 +15,5 @@ trait V0 {
   }
 
 }
+
+object V0 extends V0Models

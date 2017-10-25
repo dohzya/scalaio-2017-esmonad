@@ -22,7 +22,6 @@ object V7_3 extends V6Handler with V6Journal with V6Model {
     }
 
     def andThen(other: SourcedUpdateT[F, STATE, EVENT])(implicit F: FlatMap[F]): SourcedCreationT[F, STATE, EVENT] = {
-      other.impl.compose()
       SourcedCreationT(this.impl.flatMap(other.impl.run))
     }
   }

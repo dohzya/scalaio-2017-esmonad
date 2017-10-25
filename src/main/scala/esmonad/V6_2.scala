@@ -1,24 +1,30 @@
 package esmonad
 
-trait V6Sourced { self: V4Handler =>
+import cats.{FlatMap, Functor}
+import cats.syntax.functor._
+import cats.syntax.flatMap._
 
-  case class Sourced[STATE, EVENT](run: Either[String, (Vector[EVENT], STATE)]) {
+trait V6_2Sourced { self: V4Handler =>
 
-    def events: Either[String, Vector[EVENT]] = run.map { case (events, _) => events }
+  case class SourcedT[F[_], STATE, EVENT](run: F[(Vector[EVENT], STATE)]) {
 
-    def map[B](fn: STATE => B): Sourced[B, EVENT] =
-      Sourced[B, EVENT](run.map { case (events, state) =>
+    def events(implicit F: Functor[F]): F[Vector[EVENT]] = run.map { case (events, _) => events }
+
+    def map[B](fn: STATE => B)(implicit F: Functor[F]): SourcedT[F, B, EVENT] =
+      SourcedT[F, B, EVENT](run.map { case (events, state) =>
         (events, fn(state))
       })
 
-    def flatMap[B](fn: STATE => Sourced[B, EVENT]): Sourced[B, EVENT] =
-      Sourced(run.flatMap { case (oldEvents, oldState) =>
+    def flatMap[B](fn: STATE => SourcedT[F, B, EVENT])(implicit F: FlatMap[F]): SourcedT[F, B, EVENT] =
+      SourcedT(run.flatMap { case (oldEvents, oldState) =>
         fn(oldState).run.map { case (newEVents, newState) =>
           (oldEvents ++ newEVents, newState)
         }
       })
 
   }
+
+  type Sourced[STATE, EVENT] = SourcedT[Either[String, ?], STATE, EVENT]
 
   object Sourced {
 
@@ -53,4 +59,4 @@ trait V6Sourced { self: V4Handler =>
 
 }
 
-object V6 extends V6Sourced with V5Models with V4Handler with V5Journal
+object V6_2 extends V6_2Sourced with V5Models with V4Handler with V5Journal

@@ -76,7 +76,7 @@ trait V6Model { this: V6Handler with V6Journal =>
     }
 
     // The handler
-    val handler = EventHandler[Turtle, TurtleEvent] {
+    implicit val handler: EventHandler[Turtle, TurtleEvent] = EventHandler[Turtle, TurtleEvent] {
       case (None, Create(id, pos, dir)) => Turtle(id, pos, dir)
       case (Some(t), Turn(id, rot)) if id == t.id =>
         t.copy(dir = Direction.rotate(t.dir, rot))

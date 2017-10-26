@@ -21,6 +21,13 @@ trait V6Sourced { self: FinalHandlers =>
         }
       })
 
+    def flatMap[B](block: STATE => Either[String, EVENT]): Sourced[B, EVENT] =
+      Sourced(run.flatMap { case (oldEvents, oldState) =>
+        fn(oldState).run.map { case (newEVents, newState) =>
+          (oldEvents ++ newEVents, newState)
+        }
+      })
+
   }
 
   object Sourced {
@@ -38,7 +45,7 @@ trait V6Sourced { self: FinalHandlers =>
     def source[STATE, EVENT](
       block: STATE => Either[String, EVENT]
     )(implicit handler: EventHandler[STATE, EVENT]): STATE => Sourced[STATE, EVENT] =
-      state => new Sourced(block(state).map { e =>
+      state => Sourced(block(state).map { e =>
         val Some(newState) = handler(Some(state), e)
         Vector(e) -> newState
       })

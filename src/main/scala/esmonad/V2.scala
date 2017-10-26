@@ -33,9 +33,9 @@ object V2 extends V2Models {
     case (None, Create(id, pos, dir)) =>
       Turtle(id, pos, dir)
     case (Some(t), Turn(id, rot)) if id == t.id =>
-      t.copy(dir = Direction.rotate(t.dir, rot))
+      t.copy(dir = t.dir.rotate(rot))
     case (Some(t), Walk(id, dist)) if id == t.id =>
-      t.copy(pos = Position.move(t.pos, t.dir, dist))
+      t.copy(pos = t.pos.move(t.dir, dist))
     case (event, state) =>
       sys.error(s"Invalid event $event for state $state")
   }

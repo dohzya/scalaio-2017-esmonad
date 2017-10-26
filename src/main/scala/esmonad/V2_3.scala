@@ -20,8 +20,8 @@ object V2_3 extends V2Models with FinalHandlers{
   val handler = EventHandler[Turtle, TurtleEvent] {
     case (None, Create(id, pos, dir)) => Turtle(id, pos, dir)
     case (Some(t), Turn(id, rot)) if id == t.id =>
-      t.copy(dir = Direction.rotate(t.dir, rot))
+      t.copy(dir = t.dir.rotate(rot))
     case (Some(t), Walk(id, dist)) if id == t.id =>
-      t.copy(pos = Position.move(t.pos, t.dir, dist))
+      t.copy(pos = t.pos.move(t.dir, dist))
   }
 }

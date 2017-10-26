@@ -18,8 +18,8 @@ trait V1Models extends V1Events {
 
   object Turtle {
     implicit val handler: EventHandler[Turtle, TurtleEvent] = {
-      case (state, Turn(rot)) => state.copy(dir = Direction.rotate(state.dir, rot))
-      case (state, Walk(dist)) => state.copy(pos = Position.move(state.pos, state.dir, dist))
+      case (state, Turn(rot)) => state.copy(dir = state.dir.rotate(rot))
+      case (state, Walk(dist)) => state.copy(pos = state.pos.move(state.dir, dist))
     }
   }
 

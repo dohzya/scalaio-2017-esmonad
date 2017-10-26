@@ -6,7 +6,7 @@ import scala.concurrent.Future
 trait FinalJournals { self: FinalHandlers =>
 
   trait WriteJournal[EVENT] {
-    def write(events: Seq[EVENT]): Future[Unit]
+    def persist(events: Seq[EVENT]): Future[Unit]
   }
 
   trait Hydratable[STATE] {
@@ -18,7 +18,8 @@ trait FinalJournals { self: FinalHandlers =>
     eventID: EVENT => String
   ) extends WriteJournal[EVENT] with Hydratable[STATE] {
     private var journal = Seq.empty[EVENT]
-    override def write(event: Seq[EVENT]): Future[Unit] = Future {
+
+    override def persist(event: Seq[EVENT]): Future[Unit] = Future {
       synchronized { journal = journal ++ event }
     }
     def journal(id: String): Future[Seq[EVENT]] = Future {
@@ -32,7 +33,7 @@ trait FinalJournals { self: FinalHandlers =>
     implicitly[Hydratable[STATE]].hydrate(id)
 
   def persist[EVENT : WriteJournal](events: Seq[EVENT]): Future[Unit] =
-    implicitly[WriteJournal[EVENT]].write(events)
+    implicitly[WriteJournal[EVENT]].persist(events)
 
 }
 
@@ -49,7 +50,7 @@ trait FinalModels extends FinalEvents with FinalHandlers with FinalJournals {
       Right(Turn(turtle.id, rot))
 
     def walk(dist: Int)(turtle: Turtle): Either[String, TurtleEvent] = {
-      val moved = Position.move(turtle.pos, turtle.dir, dist)
+      val moved = turtle.pos.move(turtle.dir, dist)
       if (moved.x.abs > 100 || moved.y.abs > 100) Left("Too far away")
       else Right(Walk(turtle.id, dist))
     }
@@ -57,9 +58,9 @@ trait FinalModels extends FinalEvents with FinalHandlers with FinalJournals {
     implicit val handler = EventHandler[Turtle, TurtleEvent] {
       case (None, Create(id, pos, dir)) => Turtle(id, pos, dir)
       case (Some(t), Turn(id, rot)) if id == t.id =>
-        t.copy(dir = Direction.rotate(t.dir, rot))
+        t.copy(dir = t.dir.rotate(rot))
       case (Some(t), Walk(id, dist)) if id == t.id =>
-        t.copy(pos = Position.move(t.pos, t.dir, dist))
+        t.copy(pos = t.pos.move(t.dir, dist))
     }
 
   }

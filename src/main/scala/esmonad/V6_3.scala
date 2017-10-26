@@ -4,7 +4,12 @@ import cats.{FlatMap, Functor}
 import cats.data.WriterT
 import cats.instances.vector._
 
-trait V6_3Sourced { self: V4Handler =>
+import scala.language.higherKinds
+
+/**
+ * Rewriting Sourced as an alias to the corresponding type class.
+ */
+trait V6_3Sourced { self: FinalHandlers =>
 
   case class SourcedT[F[_], STATE, EVENT](run: SourcedT.Impl[F, STATE, EVENT]) {
 
@@ -60,4 +65,4 @@ trait V6_3Sourced { self: V4Handler =>
 
 }
 
-object V6_3 extends V6_3Sourced with V5Models with V4Handler with V5Journal
+object V6_3 extends FinalModels with V6_3Sourced

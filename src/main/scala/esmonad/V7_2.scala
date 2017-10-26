@@ -7,9 +7,9 @@ import cats.{FlatMap, Functor}
 import scala.language.higherKinds
 
 /**
- * In this version, we abstract over the type of errors, side effects etc in the event handlers
+ * Rewriting SourcedCreationT and SourcedCreationT as monad transformers.
  */
-trait V7_2Sourced { self: V4Handler =>
+trait V7_2Sourced { self: FinalHandlers =>
 
   case class SourcedCreationT[F[_], STATE, EVENT](
     run: F[(Seq[EVENT], STATE)]
@@ -81,4 +81,4 @@ trait V7_2Sourced { self: V4Handler =>
 
 }
 
-object V7_2 extends V7_2Sourced with V4Handler with V5Journal with V5Models
+object V7_2 extends FinalModels with V7_2Sourced

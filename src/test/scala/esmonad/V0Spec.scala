@@ -2,6 +2,9 @@ package esmonad
 
 import org.scalatest._
 
+/**
+ * This is an example of using the model without any event sourcing in the first place.
+ */
 class V0Spec extends FlatSpec with Matchers {
   import esmonad.V0._
 

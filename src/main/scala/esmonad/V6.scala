@@ -1,6 +1,9 @@
 package esmonad
 
-trait V6Sourced { self: V4Handler =>
+/**
+ * Simplest possible implementation of a Sourced monad to accumulate events along some state.
+ */
+trait V6Sourced { self: FinalHandlers =>
 
   case class Sourced[STATE, EVENT](run: Either[String, (Vector[EVENT], STATE)]) {
 
@@ -53,4 +56,4 @@ trait V6Sourced { self: V4Handler =>
 
 }
 
-object V6 extends V6Sourced with V5Models with V4Handler with V5Journal
+object V6 extends FinalModels with V6Sourced

@@ -1,9 +1,9 @@
 package esmonad
 
 /**
- * In this version, we use wrap the monad into a function of previous state (technically, a Kleisli).
+ * Simplest possible implementation of a Sourced kleisli to accumulate events along some state, given some initial state.
  */
-trait V7Sourced { self: V4Handler =>
+trait V7Sourced { self: FinalHandlers =>
 
   case class SourcedCreation[STATE, EVENT](
     run: Either[String, (Seq[EVENT], STATE)]
@@ -73,4 +73,4 @@ trait V7Sourced { self: V4Handler =>
 
 }
 
-object V7 extends V7Sourced with V4Handler with V5Journal with V5Models
+object V7 extends FinalModels with V7Sourced

@@ -1,21 +1,23 @@
 package esmonad
 
-trait V1Handler {
+import scala.language.higherKinds
 
-  type EventHandler[STATE, EVENT] = (STATE, EVENT) => STATE
-
-}
-
-trait V1Models { self: V1Handler => // Basic Event Sourced
-
-  case class Turtle(id: String, pos: Position, dir: Direction)
+trait V1Events {
 
   sealed trait TurtleEvent
   case class Turn(rot: Rotation) extends TurtleEvent
   case class Walk(dist: Int) extends TurtleEvent
 
+}
+
+trait V1Models extends V1Events {
+
+  type EventHandler[STATE, EVENT] = (STATE, EVENT) => STATE
+
+  case class Turtle(id: String, pos: Position, dir: Direction)
+
   object Turtle {
-    val handler: EventHandler[Turtle, TurtleEvent] = {
+    implicit val handler: EventHandler[Turtle, TurtleEvent] = {
       case (state, Turn(rot)) => state.copy(dir = Direction.rotate(state.dir, rot))
       case (state, Walk(dist)) => state.copy(pos = Position.move(state.pos, state.dir, dist))
     }
@@ -23,4 +25,4 @@ trait V1Models { self: V1Handler => // Basic Event Sourced
 
 }
 
-object V1 extends V1Models with V1Handler
+object V1 extends V1Models

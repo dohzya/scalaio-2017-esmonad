@@ -4,7 +4,12 @@ import cats.{FlatMap, Functor}
 import cats.syntax.functor._
 import cats.syntax.flatMap._
 
-trait V6_2Sourced { self: V4Handler =>
+import scala.language.higherKinds
+
+/**
+ * Rewriting Sourced as a monad transformer to abstract validation.
+ */
+trait V6_2Sourced { self: FinalHandlers =>
 
   case class SourcedT[F[_], STATE, EVENT](run: F[(Vector[EVENT], STATE)]) {
 
@@ -59,4 +64,4 @@ trait V6_2Sourced { self: V4Handler =>
 
 }
 
-object V6_2 extends V6_2Sourced with V5Models with V4Handler with V5Journal
+object V6_2 extends FinalModels with V6_2Sourced

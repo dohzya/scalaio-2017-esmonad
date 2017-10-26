@@ -7,8 +7,10 @@ import cats.{FlatMap, Functor}
 
 import scala.language.higherKinds
 
-// The same, but written with the corresponding typeclasses
-trait V7_3Sourced { self: V4Handler =>
+/**
+ * Rewriting SourcedCreationT and SourcedCreationT as aliases to the corresponding type classes.
+ */
+trait V7_3Sourced { self: FinalHandlers =>
 
   case class SourcedCreationT[F[_], STATE, EVENT](
     impl: SourcedCreationT.Impl[F, STATE, EVENT, STATE]
@@ -88,4 +90,4 @@ trait V7_3Sourced { self: V4Handler =>
   }
 }
 
-object V7_3 extends V7_3Sourced with V4Handler with V5Journal with V5Models
+object V7_3 extends FinalModels with V7_3Sourced

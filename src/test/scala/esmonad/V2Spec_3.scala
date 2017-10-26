@@ -2,10 +2,10 @@ package esmonad
 
 import org.scalatest._
 
-class V4Spec extends FlatSpec with Matchers {
-  import esmonad.V4._
+class V2Spec_3 extends FlatSpec with Matchers {
+  import esmonad.V2_3._
 
-  "The V4 object" should "be valid" in {
+  "The V2_3 object" should "be valid" in {
 
     val events = Seq(
       Create("123", Position.zero, North),

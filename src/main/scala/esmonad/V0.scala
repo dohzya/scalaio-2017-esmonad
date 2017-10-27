@@ -7,10 +7,10 @@ trait V0Models {
   object Turtle {
 
     def turn(turtle: Turtle, rot: Rotation): Turtle =
-      turtle.copy(dir = Direction.rotate(turtle.dir, rot))
+      turtle.copy(dir = turtle.dir.rotate(rot))
 
     def walk(turtle: Turtle, dist: Int): Turtle =
-      turtle.copy(pos = Position.move(turtle.pos, turtle.dir, dist))
+      turtle.copy(pos = turtle.pos.move(turtle.dir, dist))
 
   }
 

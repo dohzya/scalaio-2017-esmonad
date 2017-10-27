@@ -1,9 +1,8 @@
 package esmonad
 
 import cats.data.{Kleisli, WriterT}
+import cats.instances.either._
 import cats.instances.vector._
-import cats.syntax.functor._
-import cats.{FlatMap, Functor}
 
 import scala.language.higherKinds
 
@@ -12,62 +11,62 @@ import scala.language.higherKinds
  */
 trait V7_3Sourced { self: FinalHandlers =>
 
-  case class SourcedCreationT[F[_], STATE, EVENT](
-    impl: SourcedCreationT.Impl[F, STATE, EVENT, STATE]
+  case class SourcedCreationT[STATE, EVENT](
+    impl: SourcedCreationT.Impl[STATE, EVENT, STATE]
   ) {
-    def run: F[(Vector[EVENT], STATE)] = {
+    def run: Either[String, (Vector[EVENT], STATE)] = {
       impl.run
     }
 
-    def events(implicit F: Functor[F]): F[Vector[EVENT]] = {
+    def events: Either[String, Vector[EVENT]] = {
       impl.written
     }
 
-    def andThen[A](other: SourcedUpdateT[F, STATE, EVENT, A])(implicit F: FlatMap[F]): SourcedCreationT[F, A, EVENT] = {
+    def andThen[A](other: SourcedUpdateT[STATE, EVENT, A]): SourcedCreationT[A, EVENT] = {
       SourcedCreationT(this.impl.flatMap(other.impl.run))
     }
   }
 
   object SourcedCreationT {
-    type Impl[F[_], STATE, EVENT, A] = WriterT[F, Vector[EVENT], A]
+    type Impl[STATE, EVENT, A] = WriterT[Either[String, ?], Vector[EVENT], A]
   }
 
-  case class SourcedUpdateT[F[_], STATE, EVENT, A](
-    impl: SourcedUpdateT.Impl[F, STATE, EVENT, A]
+  case class SourcedUpdateT[STATE, EVENT, A](
+    impl: SourcedUpdateT.Impl[STATE, EVENT, A]
   ) {
-    def run(state: STATE): F[(Vector[EVENT], A)] = {
+    def run(state: STATE): Either[String, (Vector[EVENT], A)] = {
       impl.run(state).run
     }
 
-    def events(state: STATE)(implicit F: Functor[F]): F[Vector[EVENT]] = {
+    def events(state: STATE): Either[String, Vector[EVENT]] = {
       impl.run(state).written
     }
 
-    def andThen[B](other: SourcedUpdateT[F, A, EVENT, B])(implicit F: FlatMap[F]): SourcedUpdateT[F, STATE, EVENT, B] = {
+    def andThen[B](other: SourcedUpdateT[A, EVENT, B]): SourcedUpdateT[STATE, EVENT, B] = {
       SourcedUpdateT(this.impl.andThen(other.impl))
     }
   }
 
   object SourcedUpdateT {
-    type Impl[F[_], STATE, EVENT, A] = Kleisli[WriterT[F, Vector[EVENT], ?], STATE, A]
+    type Impl[STATE, EVENT, A] = Kleisli[WriterT[Either[String, ?], Vector[EVENT], ?], STATE, A]
   }
 
   object Sourced {
 
-    def events[F[_], STATE, EVENT](sourcedCreationT: SourcedCreationT[F, STATE, EVENT])(implicit F: Functor[F]): F[Vector[EVENT]] = {
+    def events[STATE, EVENT](sourcedCreationT: SourcedCreationT[STATE, EVENT]): Either[String, Vector[EVENT]] = {
       sourcedCreationT.events
     }
 
-    def events[F[_], STATE, EVENT](state: STATE)(sourcedUpdate: SourcedUpdateT[F, STATE, EVENT, _])(implicit F: Functor[F]): F[Vector[EVENT]] = {
+    def events[STATE, EVENT](state: STATE)(sourcedUpdate: SourcedUpdateT[STATE, EVENT, _]): Either[String, Vector[EVENT]] = {
       sourcedUpdate.events(state)
     }
 
     def sourceNew[STATE]: SourceNewPartiallyApplied[STATE] = new SourceNewPartiallyApplied[STATE]
 
     final class SourceNewPartiallyApplied[STATE] {
-      def apply[F[_], EVENT](block: F[EVENT])(implicit F: Functor[F], handler: EventHandler[STATE, EVENT]): SourcedCreationT[F, STATE, EVENT] = {
-        SourcedCreationT[F, STATE, EVENT] {
-            WriterT(
+      def apply[EVENT](block: Either[String, EVENT])(implicit handler: EventHandler[STATE, EVENT]): SourcedCreationT[STATE, EVENT] = {
+        SourcedCreationT[STATE, EVENT] {
+            WriterT[Either[String, ?], Vector[EVENT], STATE](
               block.map { event =>
                 Vector(event) -> handler(None, event).value
               }
@@ -76,10 +75,10 @@ trait V7_3Sourced { self: FinalHandlers =>
       }
     }
 
-    def source[F[_], STATE, EVENT](block: STATE => F[EVENT])(implicit F: Functor[F], handler: EventHandler[STATE, EVENT]): SourcedUpdateT[F, STATE, EVENT, STATE] = {
-      SourcedUpdateT[F, STATE, EVENT, STATE] {
+    def source[STATE, EVENT](block: STATE => Either[String, EVENT])(implicit handler: EventHandler[STATE, EVENT]): SourcedUpdateT[STATE, EVENT, STATE] = {
+      SourcedUpdateT[STATE, EVENT, STATE] {
         Kleisli { state =>
-          WriterT {
+          WriterT[Either[String, ?], Vector[EVENT], STATE] {
             block(state).map { event =>
               Vector(event) -> handler(Some(state), event).value
             }

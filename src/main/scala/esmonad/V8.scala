@@ -2,39 +2,37 @@ package esmonad
 
 import scala.language.higherKinds
 
-import cats.{FlatMap, Functor, Monad}
 import cats.data.ReaderWriterStateT
 import cats.instances.either._
 import cats.instances.vector._
-import cats.syntax.functor._
 
 /**
   * Rewriting Sourced as an alias to the corresponding type class.
   */
 trait V8Sourced { self: FinalHandlers =>
 
-  case class SourcedT[F[_], STATE, EVENT, A](run: SourcedT.Impl[F, STATE, EVENT, A]) {
+  case class SourcedT[STATE, EVENT, A](run: SourcedT.Impl[STATE, EVENT, A]) {
 
-    def events(state: Option[STATE])(implicit F: Monad[F], handler: EventHandler[STATE, EVENT]): F[Vector[EVENT]] =
+    def events(state: Option[STATE])(implicit handler: EventHandler[STATE, EVENT]): Either[String, Vector[EVENT]] =
       run.written.run(handler, state).map { case (events, _, _) => events }
 
-    def map[B](fn: A => B)(implicit F: Functor[F]): SourcedT[F, STATE, EVENT, B] =
+    def map[B](fn: A => B): SourcedT[STATE, EVENT, B] =
       SourcedT(run.map(fn))
 
-    def flatMap[B](fn: A => SourcedT[F, STATE, EVENT, B])(implicit F: FlatMap[F]): SourcedT[F, STATE, EVENT, B] =
+    def flatMap[B](fn: A => SourcedT[STATE, EVENT, B]): SourcedT[STATE, EVENT, B] =
       SourcedT(run.flatMap(fn(_).run))
 
   }
 
   object SourcedT {
-    type Impl[F[_], STATE, EVENT, A] = ReaderWriterStateT[F, EventHandler[STATE, EVENT], Vector[EVENT], Option[STATE], A]
+    type Impl[STATE, EVENT, A] = ReaderWriterStateT[Either[String, ?], EventHandler[STATE, EVENT], Vector[EVENT], Option[STATE], A]
   }
 
-  type Sourced[STATE, EVENT, A] = SourcedT[Either[String, ?], STATE, EVENT, A]
+  type Sourced[STATE, EVENT, A] = SourcedT[STATE, EVENT, A]
 
   object Sourced {
 
-    def source[STATE]: sourcePartiallyApplied[STATE] = new sourcePartiallyApplied[STATE]
+    def sourceNew[STATE]: sourcePartiallyApplied[STATE] = new sourcePartiallyApplied[STATE]
 
     final class sourcePartiallyApplied[STATE] {
       def apply[EVENT](

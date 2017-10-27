@@ -1,10 +1,8 @@
 package esmonad
 
 import cats.data.{EitherT, OptionT}
-import cats.instances.either._
 import cats.instances.future._
 import org.scalatest.{AsyncFlatSpec, Matchers}
-import scala.concurrent.Future
 
 class V6Spec extends AsyncFlatSpec with Matchers {
   import esmonad.V6._
@@ -22,7 +20,7 @@ class V6Spec extends AsyncFlatSpec with Matchers {
 
     {
       for {
-        events <- EitherT.fromEither[Future](
+        events <- EitherT.fromEither(
           sourceNew[Turtle](Turtle.create("123", Position.zero, North))
             .flatMap(walkRight(1))
             .flatMap(walkRight(1))
@@ -32,7 +30,7 @@ class V6Spec extends AsyncFlatSpec with Matchers {
         _ <- EitherT.right(persist(events))
 
         state1 <- OptionT(hydrate[Turtle]("123")).toRight("not found")
-        moreEvents <- EitherT.fromEither[Future](
+        moreEvents <- EitherT.fromEither(
           source(state1, Turtle.turn(ToRight))
             .flatMap(source(Turtle.walk(2)))
             .events

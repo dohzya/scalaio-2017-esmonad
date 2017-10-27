@@ -2,16 +2,12 @@ package esmonad
 
 import cats.data.{EitherT, OptionT}
 import cats.instances.future._
-import cats.instances.either._
 import org.scalatest.{AsyncFlatSpec, Matchers}
-
-import scala.concurrent.Future
 
 class V7Spec extends AsyncFlatSpec with Matchers {
   //import esmonad.V7._
   //import esmonad.V7_2._
   import esmonad.V7_3._
-
   import Sourced._
 
   "The V7 object" should "be valid" in {
@@ -22,7 +18,7 @@ class V7Spec extends AsyncFlatSpec with Matchers {
     }
 
     (for {
-      events <- EitherT.fromEither[Future] {
+      events <- EitherT.fromEither {
         (
           sourceNew[Turtle](Turtle.create("123", Position.zero, North)) andThen
           walkRight(1) andThen
@@ -33,7 +29,7 @@ class V7Spec extends AsyncFlatSpec with Matchers {
       _ <- EitherT.right(persist(events))
 
       state1 <- OptionT(hydrate[Turtle]("123")).toRight("not found")
-      moreEvents <- EitherT.fromEither[Future] {
+      moreEvents <- EitherT.fromEither {
         Sourced.events(state1) { // alternative syntax
           source(Turtle.turn(ToRight)) andThen
           source(Turtle.walk(2))

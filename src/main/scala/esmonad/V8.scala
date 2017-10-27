@@ -72,7 +72,7 @@ trait V8Sourced { self: FinalHandlers =>
       state: STATE,
       block: STATE => Either[String, EVENT],
       error: => String,
-    )(implicit handler: EventHandler[STATE, EVENT]): Sourced[STATE, EVENT, Unit] =
+    ): Sourced[STATE, EVENT, Unit] =
       SourcedT(for {
         _ <- ReaderWriterStateT.set[Either[String, ?], EventHandler[STATE, EVENT], Vector[EVENT], Option[STATE]](Some(state))
         _ <- sourceInt(block, error)

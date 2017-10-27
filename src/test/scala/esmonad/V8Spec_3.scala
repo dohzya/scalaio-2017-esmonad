@@ -23,6 +23,7 @@ class V8Spec_3 extends AsyncFlatSpec with Matchers {
             for {
               _ <- walkRight(1)
               _ <- walkRight(1)
+              _ <- when[Turtle](_.dir == North, Turtle.walk(1))
               _ <- source(Turtle.walk(2))
             } yield ()
           ).events

@@ -90,6 +90,24 @@ trait V8_3Sourced { self: FinalHandlers =>
         _ <- ReaderWriterStateT.set[Either[String, ?], Unit, Vector[EVENT], STATE](state)
         _ <- sourceIntern(block)
       } yield ())
+
+    def when[STATE] = new WhenPartiallyApplied[STATE]
+    final class WhenPartiallyApplied[STATE] {
+      def apply[EVENT](
+        test: STATE => Boolean,
+        block: STATE => Either[String, EVENT],
+      )(
+        implicit handler: EventHandler[STATE, EVENT]
+      ): SourcedUpdate[STATE, EVENT, Unit] =
+        SourcedUpdateT(ReaderWriterStateT[Either[String, ?], Unit, Vector[EVENT], STATE, Unit] {
+          case ((), state) if test(state) =>
+            block(state).map { event =>
+              (Vector(event), handler(Some(state), event).value, ())
+            }
+          case ((), state)  => Right(Vector.empty, state, ())
+        })
+    }
+
   }
 
 }

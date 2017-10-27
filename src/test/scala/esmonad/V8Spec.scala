@@ -26,6 +26,7 @@ class V8Spec extends AsyncFlatSpec with Matchers {
             _ <- sourceNew[Turtle](Turtle.create("123", Position.zero, North))
             _ <- walkRight(1)
             _ <- walkRight(1)
+            _ <- when[Turtle](_.dir == North, Turtle.walk(1), err)
             _ <- source(Turtle.walk(2), err)
           } yield ()).events(None)
         )

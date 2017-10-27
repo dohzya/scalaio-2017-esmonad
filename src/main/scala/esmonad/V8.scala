@@ -75,6 +75,25 @@ trait V8Sourced { self: FinalHandlers =>
         _ <- ReaderWriterStateT.set[Either[String, ?], EventHandler[STATE, EVENT], Vector[EVENT], Option[STATE]](Some(state))
         _ <- sourceInt(block, error)
       } yield ())
+
+    def when[STATE] = new WhenPartiallyApplied[STATE]
+    final class WhenPartiallyApplied[STATE] {
+      def apply[EVENT](
+        test: STATE => Boolean,
+        block: STATE => Either[String, EVENT],
+        error: => String,
+      )(
+        implicit handler: EventHandler[STATE, EVENT]
+      ): Sourced[STATE, EVENT, Unit] =
+        SourcedT(ReaderWriterStateT[Either[String, ?], EventHandler[STATE, EVENT], Vector[EVENT], Option[STATE], Unit] {
+          case (handler, Some(state)) if test(state) => block(state).map { event =>
+            (Vector(event), handler(Some(state), event), ())
+          }
+          case (_, Some(state)) =>
+            Right((Vector.empty, Some(state), ()))
+          case (_, None) => Left(error)
+        })
+    }
   }
 
 }

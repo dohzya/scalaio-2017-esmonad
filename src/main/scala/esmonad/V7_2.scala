@@ -17,8 +17,8 @@ trait V7_2Sourced { self: FinalHandlers =>
 
     def events(implicit F: Functor[F]): F[Seq[EVENT]] = run.map(_._1)
 
-    def andThen(other: SourcedUpdateT[F, STATE, EVENT])(implicit F: FlatMap[F]): SourcedCreationT[F, STATE, EVENT] = {
-      SourcedCreationT[F, STATE, EVENT] {
+    def andThen[A](other: SourcedUpdateT[F, STATE, EVENT, A])(implicit F: FlatMap[F]): SourcedCreationT[F, A, EVENT] = {
+      SourcedCreationT[F, A, EVENT] {
         this.run.flatMap { case (thisEvents, thisState) =>
           other.run(thisState).map { case (otherEvents, otherState) =>
             (thisEvents ++ otherEvents, otherState)
@@ -28,16 +28,16 @@ trait V7_2Sourced { self: FinalHandlers =>
     }
   }
 
-  case class SourcedUpdateT[F[_], STATE, EVENT](
-    run: (STATE) => F[(Seq[EVENT], STATE)]
+  case class SourcedUpdateT[F[_], STATE, EVENT, A](
+    run: (STATE) => F[(Seq[EVENT], A)]
   ) {
 
     def events(state: STATE)(implicit F: Functor[F]): F[Seq[EVENT]] = {
       run(state).map(_._1)
     }
 
-    def andThen(other: SourcedUpdateT[F, STATE, EVENT])(implicit F: FlatMap[F]): SourcedUpdateT[F, STATE, EVENT] = {
-      SourcedUpdateT[F, STATE, EVENT] { initialState =>
+    def andThen[B](other: SourcedUpdateT[F, A, EVENT, B])(implicit F: FlatMap[F]): SourcedUpdateT[F, STATE, EVENT, B] = {
+      SourcedUpdateT[F, STATE, EVENT, B] { initialState =>
         this.run(initialState).flatMap { case (thisEvents, thisState) =>
           other.run(thisState).map { case (otherEvents, otherState) =>
             (thisEvents ++ otherEvents, otherState)
@@ -54,7 +54,7 @@ trait V7_2Sourced { self: FinalHandlers =>
       sourcedCreationT.events
     }
 
-    def events[F[_], STATE, EVENT](state: STATE)(sourcedUpdate: SourcedUpdateT[F, STATE, EVENT])(implicit F: Functor[F]): F[Seq[EVENT]] = {
+    def events[F[_], STATE, EVENT](state: STATE)(sourcedUpdate: SourcedUpdateT[F, STATE, EVENT, _])(implicit F: Functor[F]): F[Seq[EVENT]] = {
       sourcedUpdate.events(state)
     }
 
@@ -70,8 +70,8 @@ trait V7_2Sourced { self: FinalHandlers =>
       }
     }
 
-    def source[F[_], STATE, EVENT](block: STATE => F[EVENT])(implicit F: Functor[F], handler: EventHandler[STATE, EVENT]): SourcedUpdateT[F, STATE, EVENT] = {
-      SourcedUpdateT[F, STATE, EVENT] { state =>
+    def source[F[_], STATE, EVENT](block: STATE => F[EVENT])(implicit F: Functor[F], handler: EventHandler[STATE, EVENT]): SourcedUpdateT[F, STATE, EVENT, STATE] = {
+      SourcedUpdateT[F, STATE, EVENT, STATE] { state =>
         block(state).map { event =>
           (Seq(event), handler(Some(state), event).value)
         }

@@ -35,7 +35,7 @@ trait V7_3Sourced { self: FinalHandlers =>
   case class SourcedUpdateT[F[_], STATE, EVENT, A](
     impl: SourcedUpdateT.Impl[F, STATE, EVENT, A]
   ) {
-    def run(state: STATE): F[(Vector[EVENT], STATE)] = {
+    def run(state: STATE): F[(Vector[EVENT], A)] = {
       impl.run(state).run
     }
 

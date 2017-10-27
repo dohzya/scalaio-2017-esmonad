@@ -20,7 +20,7 @@ class V0Spec_2 extends FlatSpec with Matchers {
       .flatMap(walkRight(1))
       .flatMap(walkRight(2))
       .flatMap(walkRight(2))
-    state2 shouldBe Turtle("123", Position(-1, -1), North)
+    state2 shouldBe Right(Turtle("123", Position(-1, -1), North))
 
   }
 

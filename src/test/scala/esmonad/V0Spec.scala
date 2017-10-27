@@ -8,7 +8,7 @@ import org.scalatest._
 class V0Spec extends FlatSpec with Matchers {
   import esmonad.V0._
 
-  "The V1 object" should "be valid" in {
+  "The V0 object" should "be valid" in {
 
     def moveRight(turtle: Turtle, dist: Int) = {
       val moved = Turtle.walk(turtle, dist)

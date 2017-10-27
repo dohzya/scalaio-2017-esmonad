@@ -7,7 +7,7 @@ import org.scalatest._
 class V3Spec extends AsyncFlatSpec with Matchers {
   import esmonad.V3._
 
-  "The V6 object" should "be valid" in {
+  "The V3 object" should "be valid" in {
 
     (
       for {

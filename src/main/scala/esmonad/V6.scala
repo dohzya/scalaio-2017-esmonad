@@ -9,22 +9,15 @@ trait V6Sourced { self: FinalHandlers =>
 
     def events: Either[String, Vector[EVENT]] = run.map { case (events, _) => events }
 
-    def map[B](fn: STATE => B): Sourced[B, EVENT] =
+    def map[B](block: STATE => B): Sourced[B, EVENT] =
       Sourced[B, EVENT](run.map { case (events, state) =>
-        (events, fn(state))
+        (events, block(state))
       })
 
-    def flatMap[B](fn: STATE => Sourced[B, EVENT]): Sourced[B, EVENT] =
+    def flatMap[B](block: STATE => Sourced[B, EVENT]): Sourced[B, EVENT] =
       Sourced(run.flatMap { case (oldEvents, oldState) =>
-        fn(oldState).run.map { case (newEVents, newState) =>
-          (oldEvents ++ newEVents, newState)
-        }
-      })
-
-    def flatMap[B](block: STATE => Either[String, EVENT]): Sourced[B, EVENT] =
-      Sourced(run.flatMap { case (oldEvents, oldState) =>
-        fn(oldState).run.map { case (newEVents, newState) =>
-          (oldEvents ++ newEVents, newState)
+        block(oldState).run.map { case (newEvents, newState) =>
+          (oldEvents ++ newEvents, newState)
         }
       })
 

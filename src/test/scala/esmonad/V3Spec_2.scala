@@ -7,23 +7,33 @@ import org.scalatest._
 class V3Spec_2 extends AsyncFlatSpec with Matchers {
   import esmonad.V3_2._
 
-  "The V3_2 object" should "be valid" in {
+  "The V3 object" should "be valid" in {
 
     (
       for {
-        events <- EitherT.fromEither(Turtle.create("123", Position.zero, North).map(Seq(_)))
+        events <- EitherT.fromEither(
+          for {
+            event1 <- Turtle.create("123", Position.zero, North)
+            Some(state1) = Turtle.handler(None, event1)
+            event2 <- Turtle.walk(1)(state1)
+            Some(state2) = Turtle.handler(Some(state1), event2)
+            event3 <- Turtle.turn(ToRight)(state2)
+            Some(state3) = Turtle.handler(Some(state2), event3)
+            event4 <- Turtle.walk(1)(state3)
+            Some(state4) = Turtle.handler(Some(state3), event4)
+            event5 <- Turtle.turn(ToRight)(state4)
+            Some(state5) = Turtle.handler(Some(state4), event5)
+            event6 <- Turtle.walk(2)(state5)
+            Some(state6) = Turtle.handler(Some(state5), event6)
+            event7 <- Turtle.turn(ToRight)(state6)
+            Some(state7) = Turtle.handler(Some(state6), event7)
+            event8 <- Turtle.walk(2)(state7)
+          } yield Seq(
+            event1, event2, event3, event4,
+            event5, event6, event7, event8,
+          )
+        )
         _ <- EitherT.right(persist(events))
-        state <- OptionT(hydrate[Turtle]("123")).toRight("not found")
-        moreEvents <- EitherT.fromEither(many[Turtle, TurtleEvent](state, Seq(
-          Turtle.walk(1),
-          Turtle.turn(ToRight),
-          Turtle.walk(1),
-          Turtle.turn(ToRight),
-          Turtle.walk(2),
-          Turtle.turn(ToRight),
-          Turtle.walk(2),
-        ))(Turtle.handler).map { case (evts, _) => evts })
-        _ <- EitherT.right(persist(moreEvents))
 
         state3 <- OptionT(hydrate[Turtle]("123")).toRight("not found")
       } yield state3

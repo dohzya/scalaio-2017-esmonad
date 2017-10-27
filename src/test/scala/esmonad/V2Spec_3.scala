@@ -2,6 +2,9 @@ package esmonad
 
 import org.scalatest._
 
+/**
+  * This is an example of some sugar on creating the handler (not visible here)
+  */
 class V2Spec_3 extends FlatSpec with Matchers {
   import esmonad.V2_3._
 

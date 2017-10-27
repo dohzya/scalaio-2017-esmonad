@@ -10,17 +10,16 @@ class V0Spec_2 extends FlatSpec with Matchers {
 
   "The V0 object" should "be valid" in {
 
-    def walkRight(dist: Int) = {
-      (Turtle.walk(dist) _)
-        .andThen(Turtle.turn(ToRight))
+    def walkRight(dist: Int)(turtle: Turtle) = {
+      Turtle.walk(dist)(turtle)
+        .flatMap(Turtle.turn(ToRight))
     }
 
     val state1 = Turtle("123", Position.zero, North)
-    val state2 = walkRight(1)
-      .andThen(walkRight(1))
-      .andThen(walkRight(2))
-      .andThen(walkRight(2))
-      .apply(state1)
+    val state2 = walkRight(1)(state1)
+      .flatMap(walkRight(1))
+      .flatMap(walkRight(2))
+      .flatMap(walkRight(2))
     state2 shouldBe Turtle("123", Position(-1, -1), North)
 
   }

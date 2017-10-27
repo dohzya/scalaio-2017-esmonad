@@ -6,11 +6,17 @@ trait V0Models {
 
   object Turtle {
 
-    def turn(rot: Rotation)(turtle: Turtle): Turtle =
-      turtle.copy(dir = turtle.dir.rotate(rot))
+    def create(id: String, pos: Position, dir: Direction): Either[String, Turtle] =
+      Right(Turtle(id, pos, dir))
 
-    def walk(dist: Int)(turtle: Turtle): Turtle =
-      turtle.copy(pos = turtle.pos.move(turtle.dir, dist))
+    def turn(rot: Rotation)(turtle: Turtle): Either[String, Turtle] =
+      Right(turtle.copy(dir = turtle.dir.rotate(rot)))
+
+    def walk(dist: Int)(turtle: Turtle): Either[String, Turtle] = {
+      val moved = turtle.pos.move(turtle.dir, dist)
+      if (moved.x.abs > 100 || moved.y.abs > 100) Left("Too far away")
+      else Right(turtle.copy(pos = turtle.pos.move(turtle.dir, dist)))
+    }
 
   }
 

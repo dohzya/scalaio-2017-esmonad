@@ -42,17 +42,20 @@ trait FinalModels extends FinalEvents with FinalHandlers with FinalJournals {
 
   case class Turtle(id: String, pos: Position, dir: Direction)
 
+  private def withinRange(pos: Position): Boolean = pos.x.abs < 100 && pos.y.abs < 100
+
   object Turtle {
     def create(id: String, pos: Position, dir: Direction): Either[String, TurtleEvent] =
-      Right(Create(id, pos, dir))
+      if (withinRange(pos)) Right(Create(id, pos, dir))
+      else Left("Too far away")
 
     def turn(rot: Rotation)(turtle: Turtle): Either[String, TurtleEvent] =
       Right(Turn(turtle.id, rot))
 
     def walk(dist: Int)(turtle: Turtle): Either[String, TurtleEvent] = {
-      val moved = turtle.pos.move(turtle.dir, dist)
-      if (moved.x.abs > 100 || moved.y.abs > 100) Left("Too far away")
-      else Right(Walk(turtle.id, dist))
+      val newPos = turtle.pos.move(turtle.dir, dist)
+      if (withinRange(newPos)) Right(Walk(turtle.id, dist))
+      else Left("Too far away")
     }
 
     implicit val handler = EventHandler[Turtle, TurtleEvent] {

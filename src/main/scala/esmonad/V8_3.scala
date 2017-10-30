@@ -24,6 +24,12 @@ trait V8_3Sourced { self: FinalHandlers =>
       }
     }
 
+    def state: Either[String, STATE] = {
+      run.flatMap { case (evt, state) =>
+        updates.state(state)
+      }
+    }
+
     def andThen[B](block: A => SourcedUpdateT[STATE, EVENT, B]): SourcedCreationT[STATE, EVENT, B] = {
       SourcedCreationT[STATE, EVENT, B](run, updates.flatMap(block))
     }
@@ -32,8 +38,11 @@ trait V8_3Sourced { self: FinalHandlers =>
 
   case class SourcedUpdateT[STATE, EVENT, A](run: Sourced.Impl[STATE, EVENT, A]) {
 
-    def events(state: STATE): Either[String, Vector[EVENT]] =
-      this.run.run((), state).map { case (evts, _, _) => evts }
+    def events(initialState: STATE): Either[String, Vector[EVENT]] =
+      this.run.runL((), initialState)
+
+    def state(initialState: STATE): Either[String, STATE] =
+      this.run.runS((), initialState)
 
     def map[B](fn: A => B): SourcedUpdateT[STATE, EVENT, B] =
       SourcedUpdateT(run.map(fn))

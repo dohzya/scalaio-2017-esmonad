@@ -15,8 +15,11 @@ trait V8_2Sourced { self: FinalHandlers =>
     run: ReaderWriterStateT[Either[String, ?], Unit, Vector[EVENT], Option[STATE], A]
   ) {
 
-    def events(state: Option[STATE]): Either[String, Vector[EVENT]] =
-      run.written.run((), state).map { case (events, _, _) => events }
+    def events(initialState: Option[STATE]): Either[String, Vector[EVENT]] =
+      run.runL((), initialState)
+
+    def state(initialState: Option[STATE]): Either[String, Option[STATE]] =
+      run.runS((), initialState)
 
     def map[B](fn: A => B): Sourced[STATE, EVENT, B] =
       Sourced(run.map(fn))

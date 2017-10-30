@@ -13,8 +13,11 @@ trait V8Sourced { self: FinalHandlers =>
 
   case class SourcedT[STATE, EVENT, A](run: SourcedT.Impl[STATE, EVENT, A]) {
 
-    def events(state: Option[STATE])(implicit handler: EventHandler[STATE, EVENT]): Either[String, Vector[EVENT]] =
-      run.written.run(handler, state).map { case (events, _, _) => events }
+    def events(initialState: Option[STATE])(implicit handler: EventHandler[STATE, EVENT]): Either[String, Vector[EVENT]] =
+      run.runL(handler, initialState)
+
+    def state(initialState: Option[STATE])(implicit handler: EventHandler[STATE, EVENT]): Either[String, Option[STATE]] =
+      run.runS(handler, initialState)
 
     def map[B](fn: A => B): SourcedT[STATE, EVENT, B] =
       SourcedT(run.map(fn))

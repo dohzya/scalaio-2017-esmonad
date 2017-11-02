@@ -23,6 +23,8 @@ class V7Spec extends AsyncFlatSpec with Matchers {
           sourceNew[Turtle](Turtle.create("123", Position.zero, North)) andThen
           walkRight(1) andThen
           walkRight(1) andThen
+          when[Turtle](_.dir == North, Turtle.walk(20)) andThen
+          when[Turtle](_.dir == South, Turtle.walk(1)) andThen
           source(Turtle.walk(2))
         ).events
       }
@@ -41,7 +43,7 @@ class V7Spec extends AsyncFlatSpec with Matchers {
       state2 <- OptionT(hydrate[Turtle]("123")).toRight("not found")
     } yield state2
       ).value.map {
-      _ shouldBe Right(Turtle("123", Position(-1, -1), West))
+      _ shouldBe Right(Turtle("123", Position(-1, -2), West))
     }
   }
 

@@ -86,6 +86,31 @@ trait V7_3Sourced { self: FinalHandlers =>
         }
       }
     }
+
+    def when[STATE] = new whenPartiallyApplied[STATE]
+    final class whenPartiallyApplied[STATE] {
+      def apply[EVENT](
+        predicate: (STATE) => Boolean,
+        block: STATE => Either[String, EVENT]
+      )(implicit handler: EventHandler[STATE, EVENT]): SourcedUpdateT[STATE, EVENT, STATE] =
+        SourcedUpdateT[STATE, EVENT, STATE] {
+          Kleisli { state =>
+            if (predicate(state)) {
+              WriterT[Either[String, ?], Vector[EVENT], STATE] {
+                block(state).map { event =>
+                  Vector(event) -> handler(Some(state), event).value
+                }
+              }
+            } else {
+              WriterT[Either[String, ?], Vector[EVENT], STATE] {
+                Right(Vector.empty -> state)
+              }
+            }
+          }
+        }
+    }
+
+
   }
 }
 

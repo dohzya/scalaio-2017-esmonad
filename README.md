@@ -4,6 +4,7 @@ COMPOSABLE EVENT SOURCING WITH MONADS
 List of files
 -------------
 
+- [`slides.pdf`](https://raw.githubusercontent.com/dohzya/scalaio-2017-esmonad/master/slides.pdf): The slides
 - `models`: The base model
 - `V0`: (part **1.1**) Non-ES version
 - `V1`: Adding ES - without creation

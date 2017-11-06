@@ -6,34 +6,36 @@ import org.scalatest.{AsyncFlatSpec, Matchers}
 
 class V6Spec extends AsyncFlatSpec with Matchers {
   import esmonad.V6._
-  //import esmonad.V6_2._
-//  import esmonad.V6_3._
   import Sourced._
 
   "The V6 object" should "be valid" in {
 
-    def walkRight(dist: Int)(state: Turtle) =
+    val err = "INVALID"
+
+    def walkRight(dist: Int): Sourced[Turtle, TurtleEvent, Unit] =
       for {
-        state1 <- source(state, Turtle.walk(dist))
-        state2 <- source(state1, Turtle.turn(ToRight))
-      } yield state2
+        _ <- source(Turtle.walk(dist), err)
+        _ <- source(Turtle.turn(ToRight), err)
+      } yield ()
 
     {
       for {
         events <- EitherT.fromEither(
-          sourceNew[Turtle](Turtle.create("123", Position.zero, North))
-            .flatMap(walkRight(1))
-            .flatMap(walkRight(1))
-            .flatMap(source(Turtle.walk(2)))
-            .events
+          (for {
+            _ <- sourceNew[Turtle](Turtle.create("123", Position.zero, North))
+            _ <- walkRight(1)
+            _ <- walkRight(1)
+            _ <- source(Turtle.walk(2), err)
+          } yield ()).events(None)
         )
         _ <- EitherT.right(persist(events))
 
         state1 <- OptionT(hydrate[Turtle]("123")).toRight("not found")
         moreEvents <- EitherT.fromEither(
-          source(state1, Turtle.turn(ToRight))
-            .flatMap(source(Turtle.walk(2)))
-            .events
+          (for {
+            _ <- source(state1, Turtle.turn(ToRight), err)
+            _ <- source(Turtle.walk(2), err)
+          } yield ()).events(Some(state1))
         )
         _ <- EitherT.right(persist(moreEvents))
 

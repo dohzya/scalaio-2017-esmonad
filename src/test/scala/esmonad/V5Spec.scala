@@ -4,13 +4,12 @@ import cats.data.{EitherT, OptionT}
 import cats.instances.future._
 import org.scalatest.{AsyncFlatSpec, Matchers}
 
-class V7Spec extends AsyncFlatSpec with Matchers {
-  //import esmonad.V7._
-  //import esmonad.V7_2._
-  import esmonad.V7_3._
+class V5Spec extends AsyncFlatSpec with Matchers {
+  //import esmonad.V5._
+  import esmonad.V5_2._
   import Sourced._
 
-  "The V7 object" should "be valid" in {
+  "The V5 object" should "be valid" in {
 
     def walkRight(dist: Int) = {
       source(Turtle.walk(dist)) andThen

@@ -3,7 +3,7 @@ package esmonad
 /**
  * Simplest possible implementation of a Sourced kleisli to accumulate events along some state, given some initial state.
  */
-trait V7Sourced { self: FinalHandlers =>
+trait V5Sourced { self: FinalHandlers =>
 
   case class SourcedCreation[STATE, EVENT](
     run: Either[String, (Seq[EVENT], STATE)]
@@ -73,4 +73,4 @@ trait V7Sourced { self: FinalHandlers =>
 
 }
 
-object V7 extends FinalModels with V7Sourced
+object V5 extends FinalModels with V5Sourced

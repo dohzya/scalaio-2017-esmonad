@@ -9,7 +9,7 @@ import cats.instances.vector._
 /**
  * Rewriting Sourced as an alias to the corresponding type class.
  */
-trait V6_3Sourced { self: FinalHandlers =>
+trait V4_2Sourced { self: FinalHandlers =>
 
   case class Sourced[STATE, EVENT](run: WriterT[Either[String, ?], Vector[EVENT], STATE]) {
 
@@ -59,4 +59,4 @@ trait V6_3Sourced { self: FinalHandlers =>
 
 }
 
-object V6_3 extends FinalModels with V6_3Sourced
+object V4_2 extends FinalModels with V4_2Sourced

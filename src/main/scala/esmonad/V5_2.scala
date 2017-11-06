@@ -9,10 +9,10 @@ import scala.language.higherKinds
 /**
  * Rewriting SourcedCreationT and SourcedCreationT as aliases to the corresponding type classes.
  */
-trait V7_3Sourced { self: FinalHandlers =>
+trait V5_2Sourced { self: FinalHandlers =>
 
-  case class SourcedCreationT[STATE, EVENT](
-    impl: SourcedCreationT.Impl[STATE, EVENT, STATE]
+  case class SourcedCreation[STATE, EVENT](
+    impl: WriterT[Either[String, ?], Vector[EVENT], STATE]
   ) {
     def run: Either[String, (Vector[EVENT], STATE)] = {
       impl.run
@@ -22,17 +22,13 @@ trait V7_3Sourced { self: FinalHandlers =>
       impl.written
     }
 
-    def andThen[A](other: SourcedUpdateT[STATE, EVENT, A]): SourcedCreationT[A, EVENT] = {
-      SourcedCreationT(this.impl.flatMap(other.impl.run))
+    def andThen[A](other: SourcedUpdate[STATE, EVENT, A]): SourcedCreation[A, EVENT] = {
+      SourcedCreation(this.impl.flatMap(other.impl.run))
     }
   }
 
-  object SourcedCreationT {
-    type Impl[STATE, EVENT, A] = WriterT[Either[String, ?], Vector[EVENT], A]
-  }
-
-  case class SourcedUpdateT[STATE, EVENT, A](
-    impl: SourcedUpdateT.Impl[STATE, EVENT, A]
+  case class SourcedUpdate[STATE, EVENT, A](
+    impl: Kleisli[WriterT[Either[String, ?], Vector[EVENT], ?], STATE, A]
   ) {
     def run(state: STATE): Either[String, (Vector[EVENT], A)] = {
       impl.run(state).run
@@ -42,30 +38,26 @@ trait V7_3Sourced { self: FinalHandlers =>
       impl.run(state).written
     }
 
-    def andThen[B](other: SourcedUpdateT[A, EVENT, B]): SourcedUpdateT[STATE, EVENT, B] = {
-      SourcedUpdateT(this.impl.andThen(other.impl))
+    def andThen[B](other: SourcedUpdate[A, EVENT, B]): SourcedUpdate[STATE, EVENT, B] = {
+      SourcedUpdate(this.impl.andThen(other.impl))
     }
-  }
-
-  object SourcedUpdateT {
-    type Impl[STATE, EVENT, A] = Kleisli[WriterT[Either[String, ?], Vector[EVENT], ?], STATE, A]
   }
 
   object Sourced {
 
-    def events[STATE, EVENT](sourcedCreationT: SourcedCreationT[STATE, EVENT]): Either[String, Vector[EVENT]] = {
+    def events[STATE, EVENT](sourcedCreationT: SourcedCreation[STATE, EVENT]): Either[String, Vector[EVENT]] = {
       sourcedCreationT.events
     }
 
-    def events[STATE, EVENT](state: STATE)(sourcedUpdate: SourcedUpdateT[STATE, EVENT, _]): Either[String, Vector[EVENT]] = {
+    def events[STATE, EVENT](state: STATE)(sourcedUpdate: SourcedUpdate[STATE, EVENT, _]): Either[String, Vector[EVENT]] = {
       sourcedUpdate.events(state)
     }
 
     def sourceNew[STATE]: SourceNewPartiallyApplied[STATE] = new SourceNewPartiallyApplied[STATE]
 
     final class SourceNewPartiallyApplied[STATE] {
-      def apply[EVENT](block: Either[String, EVENT])(implicit handler: EventHandler[STATE, EVENT]): SourcedCreationT[STATE, EVENT] = {
-        SourcedCreationT[STATE, EVENT] {
+      def apply[EVENT](block: Either[String, EVENT])(implicit handler: EventHandler[STATE, EVENT]): SourcedCreation[STATE, EVENT] = {
+        SourcedCreation[STATE, EVENT] {
             WriterT[Either[String, ?], Vector[EVENT], STATE](
               block.map { event =>
                 Vector(event) -> handler(None, event).value
@@ -75,8 +67,8 @@ trait V7_3Sourced { self: FinalHandlers =>
       }
     }
 
-    def source[STATE, EVENT](block: STATE => Either[String, EVENT])(implicit handler: EventHandler[STATE, EVENT]): SourcedUpdateT[STATE, EVENT, STATE] = {
-      SourcedUpdateT[STATE, EVENT, STATE] {
+    def source[STATE, EVENT](block: STATE => Either[String, EVENT])(implicit handler: EventHandler[STATE, EVENT]): SourcedUpdate[STATE, EVENT, STATE] = {
+      SourcedUpdate[STATE, EVENT, STATE] {
         Kleisli { state =>
           WriterT[Either[String, ?], Vector[EVENT], STATE] {
             block(state).map { event =>
@@ -92,8 +84,8 @@ trait V7_3Sourced { self: FinalHandlers =>
       def apply[EVENT](
         predicate: (STATE) => Boolean,
         block: STATE => Either[String, EVENT]
-      )(implicit handler: EventHandler[STATE, EVENT]): SourcedUpdateT[STATE, EVENT, STATE] =
-        SourcedUpdateT[STATE, EVENT, STATE] {
+      )(implicit handler: EventHandler[STATE, EVENT]): SourcedUpdate[STATE, EVENT, STATE] =
+        SourcedUpdate[STATE, EVENT, STATE] {
           Kleisli { state =>
             if (predicate(state)) {
               WriterT[Either[String, ?], Vector[EVENT], STATE] {
@@ -114,4 +106,4 @@ trait V7_3Sourced { self: FinalHandlers =>
   }
 }
 
-object V7_3 extends FinalModels with V7_3Sourced
+object V5_2 extends FinalModels with V5_2Sourced

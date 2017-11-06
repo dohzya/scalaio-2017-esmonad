@@ -9,11 +9,11 @@ import cats.instances.vector._
 /**
   * Rewriting Sourced as an alias to the corresponding type class.
   */
-trait V8_3Sourced { self: FinalHandlers =>
+trait V6_2Sourced { self: FinalHandlers =>
 
-  case class SourcedCreationT[STATE, EVENT, A](
+  case class SourcedCreation[STATE, EVENT, A](
     run: Either[String, (EVENT, STATE)],
-    updates: SourcedUpdateT[STATE, EVENT, A],
+    updates: SourcedUpdate[STATE, EVENT, A],
   ) {
 
     def events: Either[String, Vector[EVENT]] = {
@@ -30,13 +30,15 @@ trait V8_3Sourced { self: FinalHandlers =>
       }
     }
 
-    def andThen[B](block: A => SourcedUpdateT[STATE, EVENT, B]): SourcedCreationT[STATE, EVENT, B] = {
-      SourcedCreationT[STATE, EVENT, B](run, updates.flatMap(block))
+    def andThen[B](block: A => SourcedUpdate[STATE, EVENT, B]): SourcedCreation[STATE, EVENT, B] = {
+      SourcedCreation[STATE, EVENT, B](run, updates.flatMap(block))
     }
 
   }
 
-  case class SourcedUpdateT[STATE, EVENT, A](run: Sourced.Impl[STATE, EVENT, A]) {
+  case class SourcedUpdate[STATE, EVENT, A](
+    run: ReaderWriterStateT[Either[String, ?], Unit, Vector[EVENT], STATE, A]
+  ) {
 
     def events(initialState: STATE): Either[String, Vector[EVENT]] =
       this.run.runL((), initialState)
@@ -44,20 +46,15 @@ trait V8_3Sourced { self: FinalHandlers =>
     def state(initialState: STATE): Either[String, STATE] =
       this.run.runS((), initialState)
 
-    def map[B](fn: A => B): SourcedUpdateT[STATE, EVENT, B] =
-      SourcedUpdateT(run.map(fn))
+    def map[B](fn: A => B): SourcedUpdate[STATE, EVENT, B] =
+      SourcedUpdate(run.map(fn))
 
-    def flatMap[B](fn: A => SourcedUpdateT[STATE, EVENT, B]): SourcedUpdateT[STATE, EVENT, B] =
-      SourcedUpdateT(run.flatMap(fn(_).run))
+    def flatMap[B](fn: A => SourcedUpdate[STATE, EVENT, B]): SourcedUpdate[STATE, EVENT, B] =
+      SourcedUpdate(run.flatMap(fn(_).run))
 
   }
 
-  type SourcedCreation[STATE, EVENT, A] = SourcedCreationT[STATE, EVENT, A]
-  type SourcedUpdate[STATE, EVENT, A] = SourcedUpdateT[STATE, EVENT, A]
-
   object Sourced {
-
-    type Impl[STATE, EVENT, A] = ReaderWriterStateT[Either[String, ?], Unit, Vector[EVENT], STATE, A]
 
     def sourceNew[STATE]: sourcePartiallyApplied[STATE] = new sourcePartiallyApplied[STATE]
 
@@ -67,9 +64,9 @@ trait V8_3Sourced { self: FinalHandlers =>
       )(
         implicit handler: EventHandler[STATE, EVENT]
       ): SourcedCreation[STATE, EVENT, Unit] = {
-        SourcedCreationT[STATE, EVENT, Unit](
+        SourcedCreation[STATE, EVENT, Unit](
           block.map(event => event -> handler(None, event).value),
-          SourcedUpdateT(ReaderWriterStateT.pure[Either[String, ?], Unit, Vector[EVENT], STATE, Unit](()))
+          SourcedUpdate(ReaderWriterStateT.pure[Either[String, ?], Unit, Vector[EVENT], STATE, Unit](()))
         )
       }
     }
@@ -89,13 +86,13 @@ trait V8_3Sourced { self: FinalHandlers =>
       block: STATE => Either[String, EVENT],
     )(
       implicit handler: EventHandler[STATE, EVENT]
-    ): SourcedUpdate[STATE, EVENT, Unit] = SourcedUpdateT(sourceIntern(block))
+    ): SourcedUpdate[STATE, EVENT, Unit] = SourcedUpdate(sourceIntern(block))
 
     def source[STATE, EVENT](
       state: STATE,
       block: STATE => Either[String, EVENT],
     )(implicit handler: EventHandler[STATE, EVENT]): SourcedUpdate[STATE, EVENT, Unit] =
-      SourcedUpdateT(for {
+      SourcedUpdate(for {
         _ <- ReaderWriterStateT.set[Either[String, ?], Unit, Vector[EVENT], STATE](state)
         _ <- sourceIntern(block)
       } yield ())
@@ -108,7 +105,7 @@ trait V8_3Sourced { self: FinalHandlers =>
       )(
         implicit handler: EventHandler[STATE, EVENT]
       ): SourcedUpdate[STATE, EVENT, Unit] =
-        SourcedUpdateT(ReaderWriterStateT[Either[String, ?], Unit, Vector[EVENT], STATE, Unit] {
+        SourcedUpdate(ReaderWriterStateT[Either[String, ?], Unit, Vector[EVENT], STATE, Unit] {
           case ((), state) if test(state) =>
             block(state).map { event =>
               (Vector(event), handler(Some(state), event).value, ())
@@ -121,4 +118,4 @@ trait V8_3Sourced { self: FinalHandlers =>
 
 }
 
-object V8_3 extends FinalModels with V8_3Sourced
+object V6_2 extends FinalModels with V6_2Sourced

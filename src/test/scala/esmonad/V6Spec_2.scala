@@ -4,8 +4,8 @@ import cats.data.{EitherT, OptionT}
 import cats.instances.future._
 import org.scalatest.{AsyncFlatSpec, Matchers}
 
-class V8Spec_3 extends AsyncFlatSpec with Matchers {
-  import esmonad.V8_3._
+class V6Spec_2 extends AsyncFlatSpec with Matchers {
+  import esmonad.V6_2._
   import Sourced._
 
   "The V8 object" should "be valid" in {

@@ -36,7 +36,7 @@ object V2 extends V2Models {
       t.copy(dir = t.dir.rotate(rot))
     case (Some(t), Walk(id, dist)) if id == t.id =>
       t.copy(pos = t.pos.move(t.dir, dist))
-    case (event, state) =>
+    case (state, event) =>
       sys.error(s"Invalid event $event for state $state")
   }
 }
